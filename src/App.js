@@ -13,14 +13,14 @@ class App extends Component {
             interval: '',
             submitted: false,
             loading: false,
+            validInputs: false,
             labels: [],
             values:[],
-            formErrors: {
-                urls: false,
-                before: false,
-                after: false,
-                interval: false
-            }
+            urlErrors: false,
+            beforeErrors: false,
+            afterErrors: false,
+            intervalErrors: false,
+            formErrors: false
         };
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -28,6 +28,7 @@ class App extends Component {
     calculateVals(response){
         var labels = [];
         var values = [];
+        var norm = 0;
         response.forEach(function(responseVal) {
             var temp = [];
             try {
@@ -46,87 +47,51 @@ class App extends Component {
                 values.push(temp);
             }
         });
+        values.forEach(function(arr){
+            if(arr.length > 1) {
+                norm = arr.length;
+            }
+        });
+        values.forEach(function (arr) {
+            if(arr.length === 1){
+                for(var k = 0; k < norm-1; k++){
+                    arr.push(0);
+                }
+            }
+        })
         this.setState({labels: labels});
         this.setState({values: values});
         this.setState({loading: false});
     }
-    validateField(name, value){
-        var url_regex = new RegExp(
-            "^" +
-            // protocol identifier
-            "(?:(?:https?|ftp)://)" +
-            // user:pass authentication
-            "(?:\\S+(?::\\S*)?@)?" +
-            "(?:" +
-            // IP address exclusion
-            // private & local networks
-            "(?!(?:10|127)(?:\\.\\d{1,3}){3})" +
-            "(?!(?:169\\.254|192\\.168)(?:\\.\\d{1,3}){2})" +
-            "(?!172\\.(?:1[6-9]|2\\d|3[0-1])(?:\\.\\d{1,3}){2})" +
-            // IP address dotted notation octets
-            // excludes loopback network 0.0.0.0
-            // excludes reserved space >= 224.0.0.0
-            // excludes network & broacast addresses
-            // (first & last IP address of each class)
-            "(?:[1-9]\\d?|1\\d\\d|2[01]\\d|22[0-3])" +
-            "(?:\\.(?:1?\\d{1,2}|2[0-4]\\d|25[0-5])){2}" +
-            "(?:\\.(?:[1-9]\\d?|1\\d\\d|2[0-4]\\d|25[0-4]))" +
-            "|" +
-            // host name
-            "(?:(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)" +
-            // domain name
-            "(?:\\.(?:[a-z\\u00a1-\\uffff0-9]-*)*[a-z\\u00a1-\\uffff0-9]+)*" +
-            // TLD identifier
-            "(?:\\.(?:[a-z\\u00a1-\\uffff]{2,}))" +
-            // TLD may end with dot
-            "\\.?" +
-            ")" +
-            // port number
-            "(?::\\d{2,5})?" +
-            // resource path
-            "(?:[/?#]\\S*)?" +
-            "$", "gi"
-        );
-
-        switch(name) {
-            case 'urls':
-                if(value != null) {
-                    var urlVal = [];
-                    var bool = false;
-                    value.split(',').forEach(function (splits) {
-                        if (!splits.match(url_regex))
-                            bool = true;
-
-                        else{
-                            urlVal.push(splits);
-                        }
-                    });
-                    console.log(this.state.urls)
-                }
-                this.state.formErrors.urls = bool;
-                this.state.urls = urlVal;
-                break;
-            case 'before':
-                if(!value.match(/\[0-9]/g))
-                    this.state.formErrors.before = true;
-                else
-                    this.state.formErrors.before = false;
-                break;
-            case 'after':
-                if(!value.match(/\[0-9]/g))
-                    this.state.formErrors.after = true;
-                else
-                    this.state.formErrors.before = false;
-                break;
-            case 'interval':
-                if(!value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-zA-Z0-9]+)$/))
-                    this.state.formErrors.interval = true;
-                else
-                    this.state.formErrors.before = false;
-                break;
-            default:
+    validateInput(name, value){
+        if(value != null){
+            switch (name) {
+                case 'urls':
+                    this.state.urls = value.split(',');
+                    this.setState({urlErrors: false});
+                    break;
+                case 'before':
+                    if (value.match(/^[0-9]+$/) && value !== '')
+                        this.setState({beforeErrors: false });
+                    else
+                        this.setState({beforeErrors: true });
+                    break;
+                case 'after':
+                    if (value.match(/^[0-9]+$/) && value !== '')
+                        this.setState({afterErrors: false });
+                    else
+                        this.setState({afterErrors: true });
+                    break;
+                case 'interval':
+                    if (value.match(/^(?=.*[0-9])(?=.*[a-zA-Z])([a-zA-Z0-9]+)$/) && value !== '')
+                        this.setState({intervalErrors: false });
+                    else
+                        this.setState({intervalErrors: true });
+                    break;
+                default:
                     break;
             }
+        }
     }
 
     handleChange(event){
@@ -134,29 +99,54 @@ class App extends Component {
         const value = target.value;
         const name = target.name;
 
-        this.setState({[name]: event.target.value}, () => {this.validateField(name, value)});
+        this.setState({[name]: event.target.value}, () => {this.validateInput(name, value)});
     }
+
     handleSubmit(event){
-        this.setState({'submitted': true});
-        this.setState({loading: true});
-        event.preventDefault();
-        fetch('https://elastictest.herokuapp.com/page_views', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                urls: this.state.urls,
-                before: this.state.before,
-                after: this.state.after,
-                interval: this.state.interval
-            })
-        }).then(response => {
-            return response.json();
-        }).then(response =>
-        {
-            this.calculateVals(response);
-        });
+
+        if(this.state.urls.length ===0 || this.state.before ==='' || this.state.after ==='' || this.state.interval ===''){
+            this.state.formErrors = true;
+            if(this.state.url === []){
+                this.setState({urlErrors: true});
+            }
+            else
+                this.setState({urlErrors: false});
+        }
+        else
+            this.state.formErrors = false;
+
+        if(!this.state.beforeErrors && !this.state.afterErrors && !this.state.intervalErrors){
+            this.state.validInputs = true;
+        }
+        else
+            this.state.validInputs = false;
+
+        if(this.state.validInputs && !this.state.formErrors){
+            this.setState({submitted: true});
+            this.setState({loading: true});
+            event.preventDefault();
+            fetch('https://elastictest.herokuapp.com/page_views', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    urls: this.state.urls,
+                    before: this.state.before,
+                    after: this.state.after,
+                    interval: this.state.interval
+                })
+            }).then(response => {
+                return response.json();
+            }).then(response =>
+            {
+                this.calculateVals(response);
+            });
+        }
+        else{
+            event.preventDefault();
+            this.setState({formErrors: true});
+        }
     }
 
 
@@ -165,7 +155,12 @@ class App extends Component {
         if(this.state.submitted){
             if(this.state.loading){
                 return(
-                    <ReactLoading type="balls" color="#000000" height='191px' width='96px' />
+                    <div>
+                        <header className="App-header">
+                            <h1 className="App-title">Date Histogram Visualisation</h1>
+                        </header>
+                        <ReactLoading id="loading" type="balls" color="#000000" height='191px' width='96px' />
+                    </div>
                 )
             }
             else{
@@ -185,14 +180,15 @@ class App extends Component {
                     </p>
 
                     <form id="bodyForm" onSubmit={this.handleSubmit} onChange={this.handleChange}>
-                        <label>URLS: <textarea placeholder="Enter URLs separated by commas..." type="text" name="urls" value={this.state.urls} /></label><br/>
-                        <p id="error" style={{display: this.state.formErrors.urls ? 'block' : 'none' }}>Notice: Invalid Url Format</p>
-                        <label>Before: <input placeholder="Enter milliseconds Timestamp..." type="text" name="before" value={this.state.before}/></label><br/>
-                        <p id="error" style={{display: this.state.formErrors.before ? 'block' : 'none' }}>Notice: Invalid Timestamp</p>
-                        <label>After: <input placeholder="Enter milliseconds Timestamp..." type="text" name="after" value={this.state.after}/></label><br/>
-                        <p id="error" style={{display: this.state.formErrors.after ? 'block' : 'none' }}>Notice: Invalid Timestamp</p>
+                        <p id="error" style={{display: this.state.formErrors ? 'block' : 'none' }}><b>Notice: Please check for errors in the form.</b></p>
+                        <label>URLS:     <textarea placeholder="Enter URLs separated by commas..." type="text" name="urls" value={this.state.urls} /></label><br/>
+                        <p id="error" style={{display: this.state.urlErrors ? 'block' : 'none' }}>Notice: URL cannot be empty</p>
+                        <label>Before:   <input placeholder="Enter milliseconds Timestamp..." type="text" name="before" value={this.state.before}/></label><br/>
+                        <p id="error" style={{display: this.state.beforeErrors ? 'block' : 'none' }}>Notice: Invalid Timestamp</p>
+                        <label>After:    <input placeholder="Enter milliseconds Timestamp..." type="text" name="after" value={this.state.after}/></label><br/>
+                        <p id="error" style={{display: this.state.afterErrors ? 'block' : 'none' }}>Notice: Invalid Timestamp</p>
                         <label>Interval: <input placeholder="Enter interval such as 2m or 2s..." type="text" name="interval" value={this.state.interval}/></label><br/>
-                        <p id="error" style={{display: this.state.formErrors.interval ? 'block' : 'none' }}>Notice: Invalid Interval</p>
+                        <p id="error" style={{display: this.state.intervalErrors ? 'block' : 'none' }}>Notice: Invalid Interval</p>
                         <input type="submit" value="Submit"></input>
                     </form>
                 </div>

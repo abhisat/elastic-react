@@ -24,12 +24,10 @@ class Graph extends Component {
             this.state.labels[i] = new Date(this.state.labels[i]).toLocaleTimeString();
         }
 
-        for(var i = 0; i < this.state.labels.length; i++){
-            this.state.colours[i] = "rgba(" + Math.random() * (255) + ", " + Math.random() * (255) + "," + Math.random() * (255) + ", 0.7)";
+        for(var j = 0; j < this.state.labels.length; j++){
+            this.state.colours[j] = "rgba(" + Math.random() * (255) + ", " + Math.random() * (255) + "," + Math.random() * (255) + ", 0.7)";
         }
-
         for(var l = 0; l < this.state.urls.length; l++){
-
             this.state.trace[l] = {
                 x: this.state.labels,
                 y: this.state.values[l],
@@ -49,11 +47,11 @@ class Graph extends Component {
         }
         var layout = {
             barmode: "stack",
+            showlegend: true,
             legend: {
                 x: 1000,
-                y: 1
+                y: 1500
             },
-            title: "Page Hits Histogram",
             xaxis: {title: "Timestamp"},
             yaxis: {title: "Count"}
         };
@@ -64,7 +62,12 @@ class Graph extends Component {
     }
     render(){
             return(
-                <div id="graph"></div>
+                <div>
+                    <header className="App-header">
+                        <h1 className="App-title">Date Histogram Visualisation</h1>
+                    </header>
+                    <div id="graph"></div>
+                </div>
             )
         }
 }

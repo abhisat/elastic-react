@@ -10,11 +10,17 @@ input[type="text"]{
 p[id="error"]{
   color: red;
   font-size: 50%;
+  justify-self: right;
 }
 textarea{
   width:75em;
   height: 4em;
   margin: 1em;
+}
+
+#loading{
+  justify-content: center;
+  margin: 0 auto;
 }
 body {
 
