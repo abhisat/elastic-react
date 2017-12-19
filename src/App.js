@@ -25,6 +25,8 @@ class App extends Component {
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
     }
+
+    //Function to take the response from API and calculate the values for the Graph
     calculateVals(response){
         var labels = [];
         var values = [];
@@ -63,6 +65,9 @@ class App extends Component {
         this.setState({values: values});
         this.setState({loading: false});
     }
+    //Function to take the response from API and calculate the values for the Graph
+
+    //Function to validate timestamp and interval inputs in the form
     validateInput(name, value){
         if(value != null){
             switch (name) {
@@ -93,7 +98,9 @@ class App extends Component {
             }
         }
     }
+    //Function to validate timestamp and interval inputs in the form
 
+    //Function to handle change as the user inputs
     handleChange(event){
         const target = event.target;
         const value = target.value;
@@ -101,7 +108,10 @@ class App extends Component {
 
         this.setState({[name]: event.target.value}, () => {this.validateInput(name, value)});
     }
+    //Function to handle change as the user inputs
 
+
+    //Function to validate all inputs and make the API call if the inputs are valid
     handleSubmit(event){
 
         if(this.state.urls.length ===0 || this.state.before ==='' || this.state.after ==='' || this.state.interval ===''){
@@ -121,6 +131,7 @@ class App extends Component {
         else
             this.state.validInputs = false;
 
+        //Make API call and fetch the response if the inputs are valid
         if(this.state.validInputs && !this.state.formErrors){
             this.setState({submitted: true});
             this.setState({loading: true});
@@ -143,16 +154,21 @@ class App extends Component {
                 this.calculateVals(response);
             });
         }
+        //Make API call and fetch the response if the inputs are valid
+
+        //Display the error message if the inputs are not valid
         else{
             event.preventDefault();
             this.setState({formErrors: true});
         }
+        //Display the error message if the inputs are not valid
     }
+    //Function to validate all inputs and make the API call if the inputs are valid
 
+  render() {
 
-  render()
-{
         if(this.state.submitted){
+            // Render loading animation if data is still loading but form is submitted
             if(this.state.loading){
                 return(
                     <div>
@@ -163,12 +179,14 @@ class App extends Component {
                     </div>
                 )
             }
+            // Render graph if data is has loaded
             else{
                 return(
                     <Graph labels={this.state.labels} values={this.state.values} urls={this.state.urls}/>
                 )
             }
         }
+        // Render input form if nothing has been submitted
         else{
             return (
                 <div className="App">

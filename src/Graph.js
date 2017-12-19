@@ -17,7 +17,11 @@ class Graph extends Component {
             trace: []
         };
     }
+
+    // Function to draw graph if the DOM element has been mounted
     componentDidMount(){
+
+        // Using Plotly.js for graphs
         var Plotly = require('plotly.js');
 
         for(var i = 0; i < this.state.labels.length; i++){
@@ -27,6 +31,8 @@ class Graph extends Component {
         for(var j = 0; j < this.state.labels.length; j++){
             this.state.colours[j] = "rgba(" + Math.random() * (255) + ", " + Math.random() * (255) + "," + Math.random() * (255) + ", 0.7)";
         }
+
+        // Tracing data for each url to be displayed in the graph
         for(var l = 0; l < this.state.urls.length; l++){
             this.state.trace[l] = {
                 x: this.state.labels,
@@ -45,6 +51,7 @@ class Graph extends Component {
 
             };
         }
+        // Layout of the graph
         var layout = {
             barmode: "stack",
             showlegend: true,
@@ -60,7 +67,10 @@ class Graph extends Component {
 
         this.setState({loaded: true});
     }
+    // Function to draw graph if the DOM element has been mounted
+
     render(){
+        // Render the graph component once completed drawing
             return(
                 <div>
                     <header className="App-header">
